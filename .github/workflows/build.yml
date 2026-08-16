@@ -1,4 +1,4 @@
-name: Build Android APK
+name: Build Android APK with Gemini AI Fixer
 
 on:
   push:
@@ -24,7 +24,7 @@ jobs:
       with:
         gradle-version: '7.6.1'
 
-    - name: Build APK with Gradle (Scan All Errors)
+    - name: Build APK with Gradle
       run: gradle assembleDebug --continue --stacktrace
 
     - name: Upload APK Artifact
@@ -34,11 +34,31 @@ jobs:
         name: PatalixClock-APK
         path: build/outputs/apk/debug/*.apk
 
-    - name: Upload Error Logs on Failure
+    - name: Gemini 1.5 Pro AI Auto-Analysis on Failure
       if: failure()
-      uses: actions/upload-artifact@v4
-      with:
-        name: Build-Error-Logs
-        path: |
-          build/reports/
-          **/build/reports/
+      env:
+        GEMINI_KEY: ${{ secrets.GEMINI_API_KEY }}
+      run: |
+        echo "Build Fail Ho Gaya! Gemini 1.5 Pro se Error Solution Maang Rahe Hain..."
+        python3 -c "
+        import os, urllib.request, json
+
+        api_key = os.environ.get('GEMINI_KEY')
+        url = f'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro:generateContent?key={api_key}'
+
+        prompt = 'Mera Android Gradle build fail ho gaya hai. Kripya Android SDK, Gradle settings ya code syntax se judi galti batayein aur exact fix code dein.'
+
+        payload = {'contents': [{'parts': [{'text': prompt}]}]}
+        data = json.dumps(payload).encode('utf-8')
+
+        req = urllib.request.Request(url, data=data, headers={'Content-Type': 'application/json'})
+
+        try:
+            response = urllib.request.urlopen(req)
+            result = json.loads(response.read().decode('utf-8'))
+            print('\n--- GEMINI 1.5 PRO AI SUGGESTION ---\n')
+            print(result['candidates'][0]['content']['parts'][0]['text'])
+            print('\n------------------------------------\n')
+        except Exception as e:
+            print('AI API Call Error:', e)
+        "
