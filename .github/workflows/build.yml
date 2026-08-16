@@ -32,7 +32,8 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: PatalixClock-APK
-        path: "**/build/outputs/apk/debug/*.apk"
+        path: "**/*.apk"
+        if-no-files-found: error
 
     - name: Gemini AI Auto-Analysis on Failure
       if: failure()
@@ -52,7 +53,7 @@ jobs:
             with open('build.log', 'r', encoding='utf-8', errors='ignore') as f:
                 log_content = f.read()[-3000:]
 
-        prompt = f'Mera Android Gradle build fail ho gaya hai. Terminal error log ye hai:\n\n{log_content}\n\nIs galti ko fix karne ke liye exact code change batayein.'
+        prompt = f'Mera Android Gradle build fail ho gaya hai ya APK file nahi ban pa rahi hai. Terminal error log ye hai:\n\n{log_content}\n\nIs galti ko fix karne ke liye exact code change batayein.'
 
         url = f'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={api_key}'
         payload = {'contents': [{'parts': [{'text': prompt}]}]}
