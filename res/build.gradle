@@ -13,6 +13,11 @@ allprojects {
         google()
         mavenCentral()
     }
+    // Saare errors aur warnings ek saath print karne ke liye compiler settings
+    tasks.withType(JavaCompile) {
+        options.compilerArgs << "-Xmaxerrs" << "10000"
+        options.compilerArgs << "-Xmaxwarns" << "10000"
+    }
 }
 
 apply plugin: 'com.android.application'
