@@ -25,7 +25,7 @@ jobs:
         gradle-version: '7.6.1'
 
     - name: Build APK with Gradle
-      run: gradle assembleDebug --continue --stacktrace
+      run: gradle assembleDebug --continue --stacktrace 2>&1 | tee build.log
 
     - name: Upload APK Artifact
       if: success()
@@ -34,20 +34,28 @@ jobs:
         name: PatalixClock-APK
         path: build/outputs/apk/debug/*.apk
 
-    - name: Gemini 1.5 Pro AI Auto-Analysis on Failure
+    - name: Gemini AI Auto-Analysis on Failure
       if: failure()
       env:
         GEMINI_KEY: ${{ secrets.GEMINI_API_KEY }}
       run: |
-        echo "Build Fail Ho Gaya! Gemini 1.5 Pro se Error Solution Maang Rahe Hain..."
         python3 -c "
         import os, urllib.request, json
 
         api_key = os.environ.get('GEMINI_KEY')
-        url = f'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro:generateContent?key={api_key}'
+        if not api_key:
+            print('Error: GEMINI_API_KEY secret set nahi hai!')
+            exit(1)
 
-        prompt = 'Mera Android Gradle build fail ho gaya hai. Kripya Android SDK, Gradle settings ya code syntax se judi galti batayein aur exact fix code dein.'
+        # Build log file se last errors read karna
+        log_content = ''
+        if os.path.exists('build.log'):
+            with open('build.log', 'r', encoding='utf-8', errors='ignore') as f:
+                log_content = f.read()[-3000:]
 
+        prompt = f'Mera Android Gradle build fail ho gaya hai. Terminal error log ye hai:\n\n{log_content}\n\nIs galti ko fix karne ke liye exact code change batayein.'
+
+        url = f'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={api_key}'
         payload = {'contents': [{'parts': [{'text': prompt}]}]}
         data = json.dumps(payload).encode('utf-8')
 
@@ -56,9 +64,9 @@ jobs:
         try:
             response = urllib.request.urlopen(req)
             result = json.loads(response.read().decode('utf-8'))
-            print('\n--- GEMINI 1.5 PRO AI SUGGESTION ---\n')
+            print('\n================ GEMINI AI ERROR SOLUTION ================')
             print(result['candidates'][0]['content']['parts'][0]['text'])
-            print('\n------------------------------------\n')
+            print('==========================================================\n')
         except Exception as e:
             print('AI API Call Error:', e)
         "
