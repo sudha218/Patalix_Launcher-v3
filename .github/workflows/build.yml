@@ -32,7 +32,7 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: PatalixClock-APK
-        path: build/outputs/apk/debug/*.apk
+        path: "**/build/outputs/apk/debug/*.apk"
 
     - name: Gemini AI Auto-Analysis on Failure
       if: failure()
@@ -47,7 +47,6 @@ jobs:
             print('Error: GEMINI_API_KEY secret set nahi hai!')
             exit(1)
 
-        # Build log file se last errors read karna
         log_content = ''
         if os.path.exists('build.log'):
             with open('build.log', 'r', encoding='utf-8', errors='ignore') as f:
