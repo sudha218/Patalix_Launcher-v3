@@ -21,19 +21,19 @@ jobs:
 
     - name: Setup Gradle
       uses: gradle/actions/setup-gradle@v3
-      with:
-        gradle-version: '7.6.1'
 
-    - name: Build APK with Gradle
-      run: gradle assembleDebug --no-daemon --stacktrace 2>&1 | tee build.log
+    - name: Make Gradlew Executable
+      run: chmod +x gradlew
+
+    - name: Build APK with Gradle Wrapper
+      run: ./gradlew assembleDebug --stacktrace 2>&1 | tee build.log
 
     - name: Upload APK Artifact
       if: success()
       uses: actions/upload-artifact@v4
       with:
         name: PatalixClock-APK
-        path: "**/outputs/**/*.apk"
-        if-no-files-found: error
+        path: "**/build/outputs/apk/**/*.apk"
 
     - name: Gemini AI Auto-Analysis on Failure
       if: failure()
@@ -53,7 +53,7 @@ jobs:
             with open('build.log', 'r', encoding='utf-8', errors='ignore') as f:
                 log_content = f.read()[-3000:]
 
-        prompt = f'Mera Android Gradle build fail ho gaya hai. Log:\n{log_content}\nExact code fix batayein.'
+        prompt = f'Mera Android Gradle build fail ho gaya hai. Error log:\n{log_content}\nExact code fix batayein.'
 
         url = f'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={api_key}'
         payload = {'contents': [{'parts': [{'text': prompt}]}]}
